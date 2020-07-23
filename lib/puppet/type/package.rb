@@ -60,6 +60,7 @@ module Puppet
     feature :install_only, "The provider accepts options to only install packages never update (kernels, etc.)"
     feature :install_options, "The provider accepts options to be
       passed to the installer command."
+    feature :sensitive_install_options, "The provider can redact sensitive install_options"
     feature :uninstall_options, "The provider accepts options to be
       passed to the uninstaller command."
     feature :disableable, "The provider can disable packages. This feature is used by specifying `disabled` as the
@@ -716,6 +717,14 @@ module Puppet
       if @parameters[:mark] && [:absent, :purged, :held].include?(@parameters[:ensure].should)
         raise ArgumentError, _('You cannot use "mark" property while "ensure" is one of ["absent", "purged", "held"]')
       end
+    end
+
+    def set_sensitive_parameters(sensitive_parameters)
+      if sensitive_parameters.include?(:install_options) && self.provider.feature?(:sensitive_install_options)
+        sensitive_parameters.delete(:install_options)
+        parameter(:install_options).sensitive = true
+      end
+      super(sensitive_parameters)
     end
   end
 end

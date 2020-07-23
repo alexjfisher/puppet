@@ -12,7 +12,7 @@ Puppet::Type.type(:package).provide :apt, :parent => :dpkg, :source => :dpkg do
     These options should be specified as an array where each element is either a
      string or a hash."
 
-  has_feature :versionable, :install_options, :virtual_packages
+  has_feature :versionable, :install_options, :virtual_packages, :sensitive_install_options
 
   commands :aptget => "/usr/bin/apt-get"
   commands :aptcache => "/usr/bin/apt-cache"
@@ -147,7 +147,11 @@ Puppet::Type.type(:package).provide :apt, :parent => :dpkg, :source => :dpkg do
 
     self.unhold if self.properties[:mark] == :hold
     begin
-      aptget(*cmd)
+      if @resource[:install_options] && @resource.parameter(:install_options).sensitive
+        execute([:'apt-get', *cmd], { :failonfail => true, :combine => true, :sensitive => true })
+      else
+        aptget(*cmd)
+      end
     ensure
       self.hold if @resource[:mark] == :hold
     end
